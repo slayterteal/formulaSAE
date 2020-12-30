@@ -13,7 +13,7 @@ long raw_rpm = -1;
 long raw_engine_temp = -1; 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
 
   Serial.println("CAN Receiver Callback");
