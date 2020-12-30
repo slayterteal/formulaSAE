@@ -4,4 +4,6 @@ Display: MSP3218
 
 CAN Transceiver: SN65HVD230D
 
+Power Supply: Drok 12v to 5V converter ASIN:B07P663XJV
+
 Engine Controller: AEM Infinity Series 3 https://www.aemelectronics.com/sites/default/files/aem_datasheet/Hardware-Specification_Infinity_Series-3.pdf
