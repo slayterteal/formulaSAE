@@ -1,15 +1,16 @@
 #include <CAN.h>
 #include <math.h>
-//J1939 message ID constants
+//J1939 message ID constants NEED TO BE DETERMINED
 const char SPEED = 0;
 const char GEAR = 1;
 const char RPM = 2;
 const char ENGINE_TEMP = 3;
 
-long speed = -1; 
-long gear = -1; 
-long rpm = -1; 
-long engineTemp = -1; 
+//Global variables to be filled by CAN messages and then displayed
+long raw_speed = -1; 
+long raw_gear = -1; 
+long raw_rpm = -1; 
+long raw_engine_temp = -1; 
 
 void setup() {
   Serial.begin(9600);
@@ -19,6 +20,7 @@ void setup() {
 
   // start the CAN bus at 500 kbps
   if (!CAN.begin(500E3)) {
+    //make sure to display this failure onscreen
     Serial.println("Starting CAN failed!");
     while (1);
   }
@@ -31,7 +33,7 @@ void loop() {
   // do nothing
 }
 
-long hex_to_long(char *c, int end, int start = 0){
+long hexToLong(char *c, int end, int start = 0){
     long decimal = 0;
     for (int i = start; i < end; i++) {
         int temp = (c[i] >= 'A') ? (c[i] >= 'a') ? (c[i] - 'a' + 10) : (c[i] - 'A' + 10) : (c[i] - '0');
@@ -40,7 +42,7 @@ long hex_to_long(char *c, int end, int start = 0){
     return decimal;
 }
 
-void onReceive(int packetSize) {
+void onReceive(int packet_size) {
   // received a packet
   Serial.print("Received ");
 
@@ -62,17 +64,17 @@ void onReceive(int packetSize) {
     Serial.println(CAN.packetDlc());
   } else {
     Serial.print(" and length ");
-    Serial.println(packetSize);
+    Serial.println(packet_size);
 
 //if packetSize is only data size then this will work
-    char message[packetSize];
+    char message[packet_size];
 
     // only print packet data for non-RTR packets
     int i = 0;
     while (CAN.available()) {
-      char messageData = (char)CAN.read();
-      Serial.print(messageData);
-      message[i++] = messageData;
+      char message_data = (char)CAN.read();
+      Serial.print(message_data);
+      message[i++] = message_data;
     }
     /*The data will need to be interpreted
     For now the raw decimal value is assigned to the global variable
@@ -80,19 +82,19 @@ void onReceive(int packetSize) {
     switch(ID){
         //speed
         case SPEED:
-            speed = hex_to_long(message, packetSize);
+            raw_speed = hexToLong(message, packet_size);
             break;
         //gear
         case GEAR:
-            gear = hex_to_long(message, packetSize);
+            raw_gear = hexToLong(message, packet_size);
             break;
         //rpm
         case RPM:
-            rpm = hex_to_long(message, packetSize);
+            raw_rpm = hexToLong(message, packet_size);
             break;
         //engine temperature
         case ENGINE_TEMP:
-            engineTemp = hex_to_long(message, packetSize);
+            raw_engine_temp = hexToLong(message, packet_size);
             break;
         default:
             Serial.print(" ID not identified");
