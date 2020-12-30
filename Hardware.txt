@@ -1,0 +1,7 @@
+Micro Processor: ESP32s V1.1
+
+Display: MSP3218
+
+CAN Transceiver: SN65HVD230D
+
+Engine Controller: AEM Infinity Series 3 https://www.aemelectronics.com/sites/default/files/aem_datasheet/Hardware-Specification_Infinity_Series-3.pdf

@@ -1,0 +1,11 @@
+Hello!
+
+I am on Oklahoma State Universities Formula SAE team. We bought Infinity Series-3 recently and my job is to display information from the Infinity received via CAN. Looking through the technical docs all I can find is the pins relating to high and low and a note saying to contact you for more information. Could you please inform me of the following information:
+
+Do you use J1939?
+What are the IDs and descriptions of the messages being sent via CAN?
+What speed does the bus operate at?
+Are there any remote transmission requests sent by the  Infinity?
+
+Thank you so much for the help!
+Michael Thompson

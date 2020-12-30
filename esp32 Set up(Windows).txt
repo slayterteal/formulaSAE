@@ -1,0 +1,17 @@
+Download_ Arduino IDE
+
+	Arduino IDE
+
+Go_ File->Preferences
+
+Add_ https://dl.espressif.com/dl/package_esp32_index.json to Additional Boards Manager URLs: 
+
+Go_ Tools->Board->Boards Manager
+
+Search_ esp32
+
+Download_ esp32
+
+Download_ "CP210x USB to UART Bridge VCP Drivers" from https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
+
+Now you can connect the board to the PC with Arduino IDE open and the board should be avalible
