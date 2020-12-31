@@ -7,25 +7,25 @@
 
 //Global variables to be filled by CAN messages and then displayed
 //message: 0x01F0A000
-double engine_speed = -1;     // 0-25,599.94 rpm
-double throttle = -1;         // 0-990998 %
-double intake_air_temp = -1;  //-198.4-260.6 Deg F  #2c#
-double coolant_temp = -1;     //-198.4-260.6 Deg F  #2c#
+double engine_speed = -1;               // 0-25,599.94 rpm
+double throttle = -1;                   // 0-990998 %
+double intake_air_temp = -1;            //-198.4-260.6 Deg F  #2c#
+double coolant_temp = -1;               //-198.4-260.6 Deg F  #2c#
 
 //message: 0x01F0A003
-double afr_1 = -1;         // 7.325-21.916 AFR
-double afr_2 = -1;         // 7.325-21.916 AFR
-double vehicle_speed = -1;    // 0-255.996 mph
-double gear = -1;             // 0-255 unitless
-double ign_timing = -1;       //-17-72.65 Deg
-double battery_voltage = -1;  // 0-16.089 volts
+double afr_1 = -1;                      // 7.325-21.916 AFR
+double afr_2 = -1;                      // 7.325-21.916 AFR
+double vehicle_speed = -1;              // 0-255.996 mph
+double gear = -1;                       // 0-255 unitless
+double ign_timing = -1;                 //-17-72.65 Deg
+double battery_voltage = -1;            // 0-16.089 volts
 
 //message: 0x01F0A004
-double map = -1;              //-14.696-935.81 PSI(g)
-double ve = -1;               // 0-255 %
-double fuel_pressure = -1;    // 0-147.939 PSI(g)
-double oil_pressure = -1;     // 0-147.939 PSI(g)
-double afr_target = -1;    // 7.325-21.916 AFR
+double manifold_absolute_pressure = -1; //-14.696-935.81 PSI(g)
+double ve = -1;                         // 0-255 %
+double fuel_pressure = -1;              // 0-147.939 PSI(g)
+double oil_pressure = -1;               // 0-147.939 PSI(g)
+double afr_target = -1;                 // 7.325-21.916 AFR
 
 //modifiers
 //message: 0x01F0A000
@@ -35,7 +35,7 @@ double m_temp = 1.8;                 // Deg F/bit
 double fahrenheit_offset = 32;       // Deg F
 
 //message: 0x01F0A003
-double m_afr = 0.057227;          // AFR/bit
+double m_afr = 0.057227;             // AFR/bit
 double afr_offset = 7.325;           // AFR
 double m_vehicle_speed = 0.00390625; // mph/bit
 double m_gear = 1;                   // unitless
@@ -134,7 +134,7 @@ void onReceive(int packet_size) {
             break;
         //MAP 0-1, VE 2, FuelPressure 3, OilPressure 4, AFRTarget 5, 6 and 7 are boolean variables that could be used as lamps
         case 0x01F0A004:
-            map = (message[0]*16 + message[1]) * m_map + map_offset;
+            manifold_absolute_pressure = (message[0]*16 + message[1]) * m_map + map_offset;
             ve = message[2] * m_ve;
             fuel_pressure = message[3] * m_pressure;
             oil_pressure = message[4] * m_pressure;
