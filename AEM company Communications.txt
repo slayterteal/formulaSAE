@@ -9,3 +9,21 @@ Are there any remote transmission requests sent by the  Infinity?
 
 Thank you so much for the help!
 Michael Thompson
+---------------------------------------------
+Good afternoon,
+
+I linked our AEMnet information below, it includes message IDs, format, bit
+and byte information.
+
+
+https://www.aemelectronics.com/files/pdf/AEMNet%20170116_Public.pdf
+
+
+If this document leaves anything unclarified, feel free to email back and
+let me know.
+
+
+Calib Leonard
+AEM Performance Electronics
+(310) 484-2322
+www.AEMElectronics.com
