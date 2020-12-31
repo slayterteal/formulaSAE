@@ -141,7 +141,7 @@ void onReceive(int packet_size) {
             afr_target = message[5] * m_afr + afr_offset;
             break;
         default:
-            Serial.print(" ID not identified");
+            Serial.print(" message was not used");
             break;
       }
     Serial.println();
