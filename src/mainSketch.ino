@@ -1,8 +1,8 @@
 #include <CAN.h>
 
 //Pin Definitions Constants
-#define rx 4 //40
-#define tx 5 //41
+#define rx 4 //GPIO4
+#define tx 5 //GPIO5
 
 TaskHandle_t CAN_Bus;
 
@@ -69,8 +69,6 @@ void setup() {
 
 void loop() {
   // do nothing
-  Serial.print("loop() running on core ");
-  Serial.println(xPortGetCoreID());
 }
 
 int _2c8bit(int num){
@@ -80,8 +78,6 @@ int _2c8bit(int num){
 
 void CAN_Handler( void * parameter){
   for(;;) {
-    Serial.print("CAN_Handler() running on core ");
-    Serial.println(xPortGetCoreID());
     int packet_size = CAN.parsePacket();
     if (packet_size) {
       // received a packet
