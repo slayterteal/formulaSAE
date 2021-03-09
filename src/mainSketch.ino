@@ -1,9 +1,10 @@
 #include <CAN.h>
-#include <math.h>
 
 //Pin Definitions Constants
-#define rx 4
-#define tx 5
+#define rx 4 //40
+#define tx 5 //41
+
+TaskHandle_t CAN_Bus;
 
 //Global variables to be filled by CAN messages and then displayed
 //message: 0x01F0A000
@@ -27,7 +28,7 @@ double fuel_pressure = -1;              // 0-147.939 PSI(g)
 double oil_pressure = -1;               // 0-147.939 PSI(g)
 double afr_target = -1;                 // 7.325-21.916 AFR
 
-//modifiers
+//Modifiers
 //message: 0x01F0A000
 double m_engine_speed = 0.39063;     // rpm/bit 
 double m_throttle = 0.0015259;       // %/bit
@@ -53,7 +54,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
   Serial.println("CAN Receiver Callback");
-  
+
+  xTaskCreatePinnedToCore(CAN_Handler, "CAN_Bus", 10000, NULL, 0, &CAN_Bus, 0);
   //Set pins
   CAN.setPins(rx, tx);
   
@@ -63,15 +65,12 @@ void setup() {
     Serial.println("Starting CAN failed!");
     while (1);
   }
-
-  // register the receive callback
-  CAN.onReceive(onReceive);
 }
 
 void loop() {
   // do nothing
-  Serial.println("CAN Receiver Callback Running");
-  delay(5000);
+  Serial.print("loop() running on core ");
+  Serial.println(xPortGetCoreID());
 }
 
 int _2c8bit(int num){
@@ -79,73 +78,81 @@ int _2c8bit(int num){
   return num;
 }
 
-void onReceive(int packet_size) {
-  // received a packet
-  Serial.print("Received ");
-
-  if (CAN.packetExtended()) {
-    Serial.print("extended ");
-  }
-
-  if (CAN.packetRtr()) {
-    // Remote transmission request, packet contains no data
-    Serial.print("RTR ");
-  }
-
-  Serial.print("packet with id 0x");
-  long ID = CAN.packetId();
-  Serial.print(ID, HEX);
-
-  if (CAN.packetRtr()) {
-    Serial.print(" and requested length ");
-    Serial.println(CAN.packetDlc());
-  } else {
-    Serial.print(" and length ");
-    Serial.println(packet_size);
-
-    //Create array to hold message data
-    int message[8];
-
-    // only print packet data for non-RTR packets
-    //assuming big endian
-    int i = 0;
-    while (CAN.available()) {
-      int message_data = CAN.read();
-      Serial.print(message_data);
-      message[i++] = message_data;
-    }
-    //AEM Infinity Series 3 IDs
-    switch(ID){
-        //Engine Speed 0-1, Throttle 4-5, Intake Air Temp 6, Coolant Temp 7
-        case 0x01F0A000:
-            engine_speed = (message[0]*16 + message[1]) * m_engine_speed;
-            throttle = (message[4]*16 + message[5]) * m_throttle;
-            intake_air_temp = (_2c8bit(message[6]) * m_temp) + fahrenheit_offset;
-            coolant_temp = (_2c8bit(message[7]) * m_temp) + fahrenheit_offset;
-            break;
-        //AFR #1 0, AFR #2 1, Vehicle Speed 2-3, Gear Calculated 4, Ign Timing 5, Battery Volts 6-7
-        case 0x01F0A003:
-            afr_1 = message[0] * m_afr + afr_offset;
-            afr_2 = message[1] * m_afr + afr_offset;
-            vehicle_speed = (message[2]*16 + message[3]) * m_vehicle_speed;
-            gear = message[4] * m_gear;
-            ign_timing = message[5] * m_ign_timing + ign_offset;
-            battery_voltage = (message[6]*16 + message[7]) * m_battery_voltage;
-            break;
-        //MAP 0-1, VE 2, FuelPressure 3, OilPressure 4, AFRTarget 5, 6 and 7 are boolean variables that could be used as lamps
-        case 0x01F0A004:
-            manifold_absolute_pressure = (message[0]*16 + message[1]) * m_map + map_offset;
-            ve = message[2] * m_ve;
-            fuel_pressure = message[3] * m_pressure;
-            oil_pressure = message[4] * m_pressure;
-            afr_target = message[5] * m_afr + afr_offset;
-            break;
-        default:
-            Serial.print(" message was not used");
-            break;
+void CAN_Handler( void * parameter){
+  for(;;) {
+    Serial.print("CAN_Handler() running on core ");
+    Serial.println(xPortGetCoreID());
+    int packet_size = CAN.parsePacket();
+    if (packet_size) {
+      // received a packet
+      Serial.print("Received ");
+    
+      if (CAN.packetExtended()) {
+        Serial.print("extended ");
       }
-    Serial.println();
+    
+      if (CAN.packetRtr()) {
+        // Remote transmission request, packet contains no data
+        Serial.print("RTR ");
+      }
+    
+      Serial.print("packet with id 0x");
+      long ID = CAN.packetId();
+      Serial.print(ID, HEX);
+    
+      if (CAN.packetRtr()) {
+        Serial.print(" and requested length ");
+        Serial.println(CAN.packetDlc());
+      } else {
+        Serial.print(" and length ");
+        Serial.println(packet_size);
+    
+        //Create array to hold message data
+        int message[8];
+    
+        // only print packet data for non-RTR packets
+        //assuming big endian
+        int i = 0;
+        while (CAN.available()) {
+          int message_data = CAN.read();
+          Serial.print(message_data);
+          message[i++] = message_data;
+        }
+        //AEM Infinity Series 3 IDs
+        switch(ID){
+            //Engine Speed 0-1, Throttle 4-5, Intake Air Temp 6, Coolant Temp 7
+            case 0x01F0A000:
+                //template: variable = message * modifier + offset
+                engine_speed = (message[0]*16 + message[1]) * m_engine_speed;
+                throttle = (message[4]*16 + message[5]) * m_throttle;
+                intake_air_temp = (_2c8bit(message[6]) * m_temp) + fahrenheit_offset;
+                coolant_temp = (_2c8bit(message[7]) * m_temp) + fahrenheit_offset;
+                break;
+            //AFR #1 0, AFR #2 1, Vehicle Speed 2-3, Gear Calculated 4, Ign Timing 5, Battery Volts 6-7
+            case 0x01F0A003:
+                afr_1 = message[0] * m_afr + afr_offset;
+                afr_2 = message[1] * m_afr + afr_offset;
+                vehicle_speed = (message[2]*16 + message[3]) * m_vehicle_speed;
+                gear = message[4] * m_gear;
+                ign_timing = message[5] * m_ign_timing + ign_offset;
+                battery_voltage = (message[6]*16 + message[7]) * m_battery_voltage;
+                break;
+            //MAP 0-1, VE 2, FuelPressure 3, OilPressure 4, AFRTarget 5, 6 and 7 are boolean variables that could be used as lamps
+            case 0x01F0A004:
+                manifold_absolute_pressure = (message[0]*16 + message[1]) * m_map + map_offset;
+                ve = message[2] * m_ve;
+                fuel_pressure = message[3] * m_pressure;
+                oil_pressure = message[4] * m_pressure;
+                afr_target = message[5] * m_afr + afr_offset;
+                break;
+            default:
+                Serial.print(" message was not used");
+                break;
+          }
+        Serial.println();
+      }
+    
+      Serial.println();
+    }
   }
-
-  Serial.println();
 }
