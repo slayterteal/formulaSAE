@@ -65,6 +65,7 @@ void setup() {
     Serial.println("Starting CAN failed!");
     while (1);
   }
+  Serial.println("Starting CAN success");
 }
 
 void loop() {
