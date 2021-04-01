@@ -1,10 +1,32 @@
 #include <CAN.h>
+#include <Adafruit_NeoPixel.h>
 
 //Pin Definitions Constants
 #define rx 4 //GPIO4
 #define tx 5 //GPIO5
+#define NeoPIN 15 //GPIO 15
+
+//NeoPixel Constants
+#define BRIGHTNESS 10 //sets brightness
+#define flashDELAY 50 //sets flash speed in ms
+const double NeoPIXELS = 8; //8 for one strip, 16 for 2
+const double _1_3pixels = (NeoPIXELS/3)+1;
+const double _2_3pixels = (2*NeoPIXELS/3)+1;
 
 TaskHandle_t CAN_Bus;
+Adafruit_NeoPixel pixels(NeoPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
+
+//Colors
+const uint32_t off = pixels.Color(0, 0, 0);
+const uint32_t green = pixels.Color(0, 150, 0);
+const uint32_t yellow = pixels.Color(255, 255, 0);
+const uint32_t red = pixels.Color(150, 0, 0);
+const uint32_t blue = pixels.Color(0, 0, 150);
+
+//NeoPixel Global variables
+unsigned long flashTime;
+int flash = 0;
+int PixelsON = 0;
 
 //Global variables to be filled by CAN messages and then displayed
 //message: 0x01F0A000
@@ -53,10 +75,9 @@ double m_pressure = 0.580151;        // PSIg/bit
 void setup() {
   Serial.begin(115200);
   while (!Serial);
-  Serial.println("CAN Receiver Callback");
 
+  //Set CAN to core 0
   xTaskCreatePinnedToCore(CAN_Handler, "CAN_Bus", 10000, NULL, 0, &CAN_Bus, 0);
-  //Set pins
   CAN.setPins(rx, tx);
   
   // start the CAN bus at 500 kbps
@@ -66,10 +87,54 @@ void setup() {
     while (1);
   }
   Serial.println("Starting CAN success");
+  
+  //Initialize NeoPixels
+  pixels.begin();
+  pixels.setBrightness(BRIGHTNESS);
+  pixels.clear();
+  flashTime = millis();
 }
 
 void loop() {
-  // do nothing
+
+}
+
+//Sets NeoPixels
+void set_LEDs(int PixelsON){ //input ranges from 0 -> (NeoPIXELS + 1)
+  if ((millis()-flashTime) > flashDELAY) {
+    flash = abs(flash-1);
+    flashTime = millis();
+  }
+  if (PixelsON == 0) pixels.clear();
+  else {
+    //Green
+    if (PixelsON < _1_3pixels) {
+      for (int i = 0; i<PixelsON; i++) pixels.setPixelColor(i, green); //Pixels Green
+      
+    //Red
+    } else if ((PixelsON > _1_3pixels)&& (PixelsON < _2_3pixels)) {
+      for (int i = 0; i<int(_1_3pixels); i++) pixels.setPixelColor(i, green); //Pixels Green
+      for (int i = int(_1_3pixels); i<PixelsON; i++) pixels.setPixelColor(i, red); //Pixels Red
+      
+    //Blue
+    } else if (PixelsON > _2_3pixels && PixelsON<(NeoPIXELS + 1)) {
+      for (int i = 0; i<int(_1_3pixels); i++) pixels.setPixelColor(i, green); //Pixels Green
+      for (int i = int(_1_3pixels); i<int(_2_3pixels); i++) pixels.setPixelColor(i, red); //Pixels Red
+      for (int i = int(_2_3pixels); i<PixelsON; i++) pixels.setPixelColor(i, blue); //Pixels Red
+      
+    //Flashing Red
+    } else if (PixelsON == (NeoPIXELS + 1)) {
+      if (flash == 1) for (int i = 0; i<NeoPIXELS; i++)pixels.setPixelColor(i, red); //Pixels Red
+      else if (flash == 0) pixels.clear();
+
+    //Something went wrong
+    } else {
+      for (int i = 0; i<NeoPIXELS; i++)pixels.setPixelColor(i, yellow); //Pixels yellow
+    }
+    for (int i = PixelsON; i<NeoPIXELS; i++) pixels.setPixelColor(i, off); //Pixels off
+  }
+  
+  pixels.show();
 }
 
 int _2c8bit(int num){
@@ -79,6 +144,7 @@ int _2c8bit(int num){
 
 void CAN_Handler( void * parameter){
   for(;;) {
+    Serial.print(xPortGetCoreID());
     int packet_size = CAN.parsePacket();
     if (packet_size) {
       // received a packet
