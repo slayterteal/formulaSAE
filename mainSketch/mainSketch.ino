@@ -7,8 +7,8 @@
 #include <Adafruit_NeoPixel.h>
 
 //Pin Definitions Constants
-#define rx 4 //GPIO4
-#define tx 5 //GPIO5
+#define rxr_can 4 //GPIO4
+#define txt_can 5 //GPIO5
 #define NeoPIN 15 //GPIO 15
 
 // screen (X,Y) pairs
@@ -122,7 +122,7 @@ void setup() {
   tft.drawCircle(REV_CENTER_X+30, REV_CENTER_Y+15, 50, TFT_DARKGREY);
   tft.setTextColor(TFT_BLACK, bg_color);
   tft.setTextDatum(MC_DATUM);
-  tft.drawString("(REVS x10)", REV_CENTER_X+30, REV_CENTER_Y + 60, 2);
+  tft.drawString("(REVS)", REV_CENTER_X+30, REV_CENTER_Y + 60, 2);
 
   // text box for the gear
   tft.drawCircle(GEAR_CENTRE_X, GEAR_CENTRE_Y, 55, TFT_DARKGREY);
@@ -150,7 +150,7 @@ void setup() {
 
   //Set CAN to core 0
   xTaskCreatePinnedToCore(CAN_Handler, "CAN_Bus", 10000, NULL, 0, &CAN_Bus, 0);
-  CAN.setPins(rx, tx);
+  CAN.setPins(rxr_can, txt_can);
   
   // start the CAN bus at 500 kbps
   if (!CAN.begin(500E3)) {
@@ -184,28 +184,28 @@ uint16_t angle = random(241); // random speed in range 0 to 240
   spr_width = spr.textWidth("277");
   spr.createSprite(spr_width, spr.fontHeight());
   spr.setTextPadding(spr_width);
-  spr.drawNumber(angle, spr_width/2, spr.fontHeight()/2);
+  spr.drawNumber(vehicle_speed, spr_width/2, spr.fontHeight()/2);
   spr.pushSprite(SPEED_CENTER_X, SPEED_CENTER_Y);
 
   // draw a number to the revs
   spr_width = spr.textWidth("277");
   spr.createSprite(spr_width, spr.fontHeight());
   spr.setTextPadding(spr_width);
-  spr.drawNumber(testrev, spr_width/2, spr.fontHeight()/2);
+  spr.drawNumber(engine_speed, spr_width/2, spr.fontHeight()/2);
   spr.pushSprite(REV_CENTER_X, REV_CENTER_Y);
   
   // draw a number to the gear
   spr_width = spr.textWidth("277");
   spr.createSprite(spr_width, spr.fontHeight());
   spr.setTextPadding(spr_width);
-  spr.drawNumber(testgear, spr_width/2, spr.fontHeight()/2, 6);
+  spr.drawNumber(gear, spr_width/2, spr.fontHeight()/2, 6);
   spr.pushSprite(GEAR_CENTRE_X - spr_width / 2, GEAR_CENTRE_Y - spr.fontHeight() / 2);
 
   // draw a number to the temp
   spr_width = spr.textWidth("277");
   spr.createSprite(spr_width, spr.fontHeight());
   spr.setTextPadding(spr_width);
-  spr.drawNumber(i, spr_width/2, spr.fontHeight()/2, 6);
+  spr.drawNumber(coolant_temp, spr_width/2, spr.fontHeight()/2, 6);
   spr.pushSprite(TEMP_CENTER_X - spr_width / 2, TEMP_CENTER_Y - spr.fontHeight() / 2);
 
   delay(60);
