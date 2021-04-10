@@ -1,0 +1,17 @@
+*top right GND
+*top left 3.3V 
+
+// SPI 3.2 Display Pinout
+GPIO:
+19 - MISO
+23 - MOSI
+18 - SCK
+14 - CS
+2  - DC
+0  - RESET
+
+// CAN and LED Pinouts
+GPIO:
+4  - rx4
+5  - rx5
+15 - NeoPIN
