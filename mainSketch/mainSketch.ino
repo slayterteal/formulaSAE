@@ -41,6 +41,8 @@ const double NeoPIXELS = 8; //8 for one strip, 16 for 2
 const double _1_3pixels = (NeoPIXELS/3)+1;
 const double _2_3pixels = (2*NeoPIXELS/3)+1;
 
+void CAN_Handler( void * parameter);
+void set_LEDs(int PixelsON);
 TaskHandle_t CAN_Bus;
 Adafruit_NeoPixel pixels(NeoPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
 
@@ -168,17 +170,46 @@ void setup() {
 }
 
 uint16_t i = 0;
+double rev_segment = 599.99 / NeoPIXELS;
 // =======================================================================================
 // Loop
 // =======================================================================================
 void loop() {
 uint16_t angle = random(241); // random speed in range 0 to 240
-  
-  uint16_t testgear = random(7);
-  uint16_t testrev = random(900);
-  //uint16_t i = 0;
-  if(i == 300) i = 0;
-  i = i+1;
+//  Testing code 
+//  uint16_t testgear = random(7);
+//  uint16_t testrev = random(900);
+//  //uint16_t i = 0;
+//  if(i == 600){
+//    i = 0;
+//  };
+//  i = i+1;
+
+  //================LED LOOP=======================//
+  if( engine_speed <= rev_segment ){
+    set_LEDs(2);
+  }
+  else if( engine_speed <= (2*rev_segment)){
+    set_LEDs(3);
+  }
+  else if( engine_speed <= (3*rev_segment)){
+    set_LEDs(4);
+  }
+  else if( engine_speed <= (4*rev_segment)){
+    set_LEDs(5);
+  }
+  else if( engine_speed <= (5*rev_segment)){
+    set_LEDs(6);
+  }
+  else if( engine_speed <= (6*rev_segment)){
+    set_LEDs(7);
+  }
+  else if( engine_speed <= (7*rev_segment)){
+    set_LEDs(8);
+  }
+  else{
+    set_LEDs(9);
+  }
 
   // draw a number to the speed
   spr_width = spr.textWidth("277");
