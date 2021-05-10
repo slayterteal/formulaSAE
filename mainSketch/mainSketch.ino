@@ -9,7 +9,7 @@
 //Pin Definitions Constants
 #define rxr_can 4 //GPIO4
 #define txt_can 5 //GPIO5
-#define NeoPIN 15 //GPIO 15
+#define NeoPIN 22 //GPIO 22
 
 // screen (X,Y) pairs
 #define GEAR_CENTRE_X 100
