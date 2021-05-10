@@ -1,6 +1,6 @@
 /*
   Display code for the MSP3218 SPI Screen for use by the OSU Formula SAE Team
-  Designed by Slayter Teal
+  Designed by Slayter Teal and Michael Thompson
   TFT_eSPI Library is created by Bodmer {https://github.com/Bodmer/TFT_eSPI) 
 */
 #include <CAN.h>
