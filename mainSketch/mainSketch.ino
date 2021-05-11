@@ -37,7 +37,7 @@ uint16_t  spr_width = 0;
 //NeoPixel Constants
 #define BRIGHTNESS 10 //sets brightness
 #define flashDELAY 50 //sets flash speed in ms
-const double NeoPIXELS = 8; //8 for one strip, 16 for 2
+const double NeoPIXELS = 16; //8 for one strip, 16 for 2
 const double _1_3pixels = (NeoPIXELS/3)+1;
 const double _2_3pixels = (2*NeoPIXELS/3)+1;
 
