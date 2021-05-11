@@ -43,7 +43,8 @@ const double _2_3pixels = (2*NeoPIXELS/3)+1;
 
 void CAN_Handler(int packet_size);
 void set_LEDs(int PixelsON);
-TaskHandle_t CAN_Bus;
+void screen(void * parameter);
+TaskHandle_t Screen;
 Adafruit_NeoPixel pixels(NeoPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
 
 //Colors
@@ -152,7 +153,7 @@ void setup() {
 //======================END OF TFT SETUP=================================================//
 
   //Set CAN to core 0
-  xTaskCreatePinnedToCore(CAN_Handler, "CAN_Bus", 10000, NULL, 0, &CAN_Bus, 0);
+  xTaskCreatePinnedToCore(screen, "Screen", 10000, NULL, 0, &Screen, 0);
   CAN.setPins(rxr_can, txt_can);
   
   // start the CAN bus at 500 kbps
@@ -177,6 +178,10 @@ double rev_segment = 15000 / (NeoPIXELS+1);
 // Loop
 // =======================================================================================
 void loop() {
+}
+
+void screen(void * parameter){
+  for(;;){
 //uint16_t angle = random(241); // random speed in range 0 to 240
 //  Testing code 
 //  uint16_t testgear = random(7);
@@ -248,7 +253,8 @@ void loop() {
 
   delay(60);
 }
-
+}
+  
 //Sets NeoPixels
 void set_LEDs(int PixelsON){ //input ranges from 0 -> (NeoPIXELS + 1)
   if ((millis()-flashTime) > flashDELAY) {
@@ -286,7 +292,7 @@ void set_LEDs(int PixelsON){ //input ranges from 0 -> (NeoPIXELS + 1)
   
   pixels.show();
 }
-
+  
 int _2c8bit(int num){
   if (num > 0x7F) num -= 0x100;
   return num;
