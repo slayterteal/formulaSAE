@@ -41,7 +41,7 @@ const double NeoPIXELS = 8; //8 for one strip, 16 for 2
 const double _1_3pixels = (NeoPIXELS/3)+1;
 const double _2_3pixels = (2*NeoPIXELS/3)+1;
 
-void CAN_Handler( void * parameter);
+void CAN_Handler(int packet_size);
 void set_LEDs(int PixelsON);
 TaskHandle_t CAN_Bus;
 Adafruit_NeoPixel pixels(NeoPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
