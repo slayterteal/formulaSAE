@@ -293,8 +293,6 @@ int _2c8bit(int num){
 }
 
 void CAN_Handler(int packet_size){
-    //Serial.print(xPortGetCoreID());
-    int packet_size = CAN.parsePacket();
     if (packet_size) {
       // received a packet
       Serial.print("Received");
