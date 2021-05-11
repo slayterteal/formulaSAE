@@ -162,6 +162,7 @@ void setup() {
     while (1);
   }
   Serial.println("Starting CAN success");
+  CAN.onReceive(CAN_Handler);
   
   //Initialize NeoPixels
   pixels.begin();
@@ -291,8 +292,7 @@ int _2c8bit(int num){
   return num;
 }
 
-void CAN_Handler( void * parameter){
-  for(;;) {
+void CAN_Handler(int packet_size){
     //Serial.print(xPortGetCoreID());
     int packet_size = CAN.parsePacket();
     if (packet_size) {
