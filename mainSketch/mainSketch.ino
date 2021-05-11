@@ -364,5 +364,4 @@ void CAN_Handler(int packet_size){
     
       Serial.println();
     }
-  }
 }
