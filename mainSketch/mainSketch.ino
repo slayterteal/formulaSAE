@@ -34,16 +34,37 @@ uint16_t* tft_buffer;
 bool      buffer_loaded = false;
 uint16_t  spr_width = 0;
 
+struct mess{
+  long packetId;
+  int message[8];
+};
+
+struct mess queue0[5];
+int pos0 = 0;
+int size0 = 0;
+int front0 = 0;
+
+struct mess queue3[5];
+int pos3 = 0;
+int size3 = 0;
+int front3 = 0;
+
+struct mess queue4[5];
+int pos4 = 0;
+int size4 = 0;
+int front4 = 0;
+
 //NeoPixel Constants
 #define BRIGHTNESS 10 //sets brightness
 #define flashDELAY 50 //sets flash speed in ms
-const double NeoPIXELS = 8; //8 for one strip, 16 for 2
+const double NeoPIXELS = 16; //8 for one strip, 16 for 2
 const double _1_3pixels = (NeoPIXELS/3)+1;
 const double _2_3pixels = (2*NeoPIXELS/3)+1;
 
-void CAN_Handler( void * parameter);
+void CAN_Handler(int packet_size);
 void set_LEDs(int PixelsON);
-TaskHandle_t CAN_Bus;
+void screen(void * parameter);
+TaskHandle_t Screen;
 Adafruit_NeoPixel pixels(NeoPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
 
 //Colors
@@ -152,7 +173,7 @@ void setup() {
 //======================END OF TFT SETUP=================================================//
 
   //Set CAN to core 0
-  xTaskCreatePinnedToCore(CAN_Handler, "CAN_Bus", 10000, NULL, 0, &CAN_Bus, 0);
+  xTaskCreatePinnedToCore(screen, "Screen", 10000, NULL, 0, &Screen, 0);
   CAN.setPins(rxr_can, txt_can);
   
   // start the CAN bus at 500 kbps
@@ -162,6 +183,7 @@ void setup() {
     while (1);
   }
   Serial.println("Starting CAN success");
+  CAN.onReceive(CAN_Handler);
   
   //Initialize NeoPixels
   pixels.begin();
@@ -176,6 +198,66 @@ double rev_segment = 15000 / (NeoPIXELS+1);
 // Loop
 // =======================================================================================
 void loop() {
+      
+
+        //AEM Infinity Series 3 IDs
+        if(size0>0){
+                // received a packet
+                Serial.print("Received ");
+    
+                //Serial.print("packet with id 0x");
+                Serial.println(queue0[front0].packetId, HEX);
+                
+                //Engine Speed 0-1, Throttle 4-5, Intake Air Temp 6, Coolant Temp 7
+                //template: variable = message * modifier + offset
+                engine_speed = (queue0[front0].message[0]*16*16 + queue0[front0].message[1]) * m_engine_speed;
+                throttle = (queue0[front0].message[4]*16*16 + queue0[front0].message[5]) * m_throttle;
+                intake_air_temp = (_2c8bit(queue0[front0].message[6]*1) * m_temp) + fahrenheit_offset;
+                coolant_temp = (_2c8bit(queue0[front0].message[7]*1) * m_temp) + fahrenheit_offset;
+                front0++;
+                size0--;
+                if(front0>4)front0 = 0;
+        }
+            //AFR #1 0, AFR #2 1, Vehicle Speed 2-3, Gear Calculated 4, Ign Timing 5, Battery Volts 6-7
+            if(size3>0){
+                // received a packet
+                Serial.print("Received ");
+    
+                //Serial.print("packet with id 0x");
+                Serial.println(queue3[front3].packetId, HEX);
+                
+                afr_1 = queue3[front3].message[0] * m_afr + afr_offset;
+                afr_2 = queue3[front3].message[1] * m_afr + afr_offset;
+                vehicle_speed = (queue3[front3].message[2]*16*16 + queue3[front3].message[3]) * m_vehicle_speed;
+                gear = queue3[front3].message[4] * m_gear;
+                ign_timing = queue3[front3].message[5] * m_ign_timing + ign_offset;
+                battery_voltage = (queue3[front3].message[6]*16*16 + queue3[front3].message[7]) * m_battery_voltage;
+                front3++;
+                size3--;
+                if(front3>4)front3 = 0;
+            }    
+            //MAP 0-1, VE 2, FuelPressure 3, OilPressure 4, AFRTarget 5, 6 and 7 are boolean variables that could be used as lamps
+            if(size4>0){
+                // received a packet
+                Serial.print("Received ");
+    
+                //Serial.print("packet with id 0x");
+                Serial.println(queue4[front4].packetId, HEX);
+                
+                manifold_absolute_pressure = (queue4[front4].message[0]*16*16 + queue4[front4].message[1]) * m_map + map_offset;
+                ve = queue4[front4].message[2] * m_ve;
+                fuel_pressure = queue4[front4].message[3] * m_pressure;
+                oil_pressure = queue4[front4].message[4] * m_pressure;
+                afr_target = queue4[front4].message[5] * m_afr + afr_offset;
+                front4++;
+                size4--;
+                if(front4>4)front4 = 0;
+            }
+
+}
+
+void screen(void * parameter){
+  for(;;){
 //uint16_t angle = random(241); // random speed in range 0 to 240
 //  Testing code 
 //  uint16_t testgear = random(7);
@@ -187,67 +269,68 @@ void loop() {
 //  i = i+1;
 
   //================LED LOOP=======================//
-  if (engine_speed == 0 ) {
-    set_LEDs(0);
-  } else if( engine_speed <= rev_segment ){
-    set_LEDs(1);
-  }
-  else if( engine_speed <= (2*rev_segment)){
-    set_LEDs(2);
-  }
-  else if( engine_speed <= (3*rev_segment)){
-    set_LEDs(3);
-  }
-  else if( engine_speed <= (4*rev_segment)){
-    set_LEDs(4);
-  }
-  else if( engine_speed <= (5*rev_segment)){
-    set_LEDs(5);
-  }
-  else if( engine_speed <= (6*rev_segment)){
-    set_LEDs(6);
-  }
-  else if( engine_speed <= (7*rev_segment)){
-    set_LEDs(7);
-  }
-  else if( engine_speed <= (8*rev_segment)){
-    set_LEDs(8);
-  }
-  else{
-    set_LEDs(9);
-  }
+    if (engine_speed == 0 ) {
+      set_LEDs(0);
+    } else if( engine_speed <= rev_segment ){
+      set_LEDs(1);
+    }
+    else if( engine_speed <= (2*rev_segment)){
+      set_LEDs(2);
+    }
+    else if( engine_speed <= (3*rev_segment)){
+      set_LEDs(3);
+    }
+    else if( engine_speed <= (4*rev_segment)){
+      set_LEDs(4);
+    }
+    else if( engine_speed <= (5*rev_segment)){
+      set_LEDs(5);
+    }
+    else if( engine_speed <= (6*rev_segment)){
+      set_LEDs(6);
+    }
+    else if( engine_speed <= (7*rev_segment)){
+      set_LEDs(7);
+    }
+    else if( engine_speed <= (8*rev_segment)){
+      set_LEDs(8);
+    }
+    else{
+      set_LEDs(9);
+    }
 
-  // draw a number to the speed
-  spr_width = spr.textWidth("277");
-  spr.createSprite(spr_width, spr.fontHeight());
-  spr.setTextPadding(spr_width);
-  spr.drawNumber(vehicle_speed, spr_width/2, spr.fontHeight()/2);
-  spr.pushSprite(SPEED_CENTER_X, SPEED_CENTER_Y);
+    // draw a number to the speed
+    spr_width = spr.textWidth("277");
+    spr.createSprite(spr_width, spr.fontHeight());
+    spr.setTextPadding(spr_width);
+    spr.drawNumber(vehicle_speed, spr_width/2, spr.fontHeight()/2);
+    spr.pushSprite(SPEED_CENTER_X, SPEED_CENTER_Y);
 
-  // draw a number to the revs
-  spr_width = spr.textWidth("277");
-  spr.createSprite(spr_width, spr.fontHeight());
-  spr.setTextPadding(spr_width);
-  spr.drawNumber(engine_speed, spr_width/2, spr.fontHeight()/2);
-  spr.pushSprite(REV_CENTER_X, REV_CENTER_Y);
-  
-  // draw a number to the gear
-  spr_width = spr.textWidth("277");
-  spr.createSprite(spr_width, spr.fontHeight());
-  spr.setTextPadding(spr_width);
-  spr.drawNumber(gear, spr_width/2, spr.fontHeight()/2, 6);
-  spr.pushSprite(GEAR_CENTRE_X - spr_width / 2, GEAR_CENTRE_Y - spr.fontHeight() / 2);
+    // draw a number to the revs
+    spr_width = spr.textWidth("277");
+    spr.createSprite(spr_width, spr.fontHeight());
+    spr.setTextPadding(spr_width);
+    spr.drawNumber(engine_speed, spr_width/2, spr.fontHeight()/2);
+    spr.pushSprite(REV_CENTER_X, REV_CENTER_Y);
 
-  // draw a number to the temp
-  spr_width = spr.textWidth("277");
-  spr.createSprite(spr_width, spr.fontHeight());
-  spr.setTextPadding(spr_width);
-  spr.drawNumber(coolant_temp, spr_width/2, spr.fontHeight()/2, 6);
-  spr.pushSprite(TEMP_CENTER_X - spr_width / 2, TEMP_CENTER_Y - spr.fontHeight() / 2);
+    // draw a number to the gear
+    spr_width = spr.textWidth("277");
+    spr.createSprite(spr_width, spr.fontHeight());
+    spr.setTextPadding(spr_width);
+    spr.drawNumber(gear, spr_width/2, spr.fontHeight()/2, 6);
+    spr.pushSprite(GEAR_CENTRE_X - spr_width / 2, GEAR_CENTRE_Y - spr.fontHeight() / 2);
 
-  delay(60);
+    // draw a number to the temp
+    spr_width = spr.textWidth("277");
+    spr.createSprite(spr_width, spr.fontHeight());
+    spr.setTextPadding(spr_width);
+    spr.drawNumber(coolant_temp, spr_width/2, spr.fontHeight()/2, 6);
+    spr.pushSprite(TEMP_CENTER_X - spr_width / 2, TEMP_CENTER_Y - spr.fontHeight() / 2);
+
+    delay(60);
+  }
 }
-
+  
 //Sets NeoPixels
 void set_LEDs(int PixelsON){ //input ranges from 0 -> (NeoPIXELS + 1)
   if ((millis()-flashTime) > flashDELAY) {
@@ -285,84 +368,58 @@ void set_LEDs(int PixelsON){ //input ranges from 0 -> (NeoPIXELS + 1)
   
   pixels.show();
 }
-
+  
 int _2c8bit(int num){
   if (num > 0x7F) num -= 0x100;
   return num;
 }
 
-void CAN_Handler( void * parameter){
-  for(;;) {
-    //Serial.print(xPortGetCoreID());
-    int packet_size = CAN.parsePacket();
-    if (packet_size) {
-      // received a packet
-      Serial.print("Received");
-    
-      if (CAN.packetExtended()) {
-        Serial.print("extended ");
-      }
-    
-      if (CAN.packetRtr()) {
-        // Remote transmission request, packet contains no data
-        Serial.print("RTR ");
-      }
-    
-      //Serial.print("packet with id 0x");
-      long ID = CAN.packetId();
-      Serial.print(ID, HEX);
-    
-      if (CAN.packetRtr()) {
-      } else {
-        Serial.print(" and length ");
-        Serial.println(packet_size);
-    
-        //Create array to hold message data
-        int message[8];
-
-        //only print packet data for non-RTR packets
-        //assuming big endian
-        int i = 0;
-        while (CAN.available()) {
-          int message_data = CAN.read();
-          Serial.print(message_data);
-          message[i++] = message_data;
+void CAN_Handler(int packet_size){
+    if(packet_size){
+      long tmp = CAN.packetId();
+      switch(tmp){
+    case 0x1F0A000 :
+    if(size0<5){
+      Serial.println("queue");
+        queue0[pos0].packetId = CAN.packetId();
+        for(int i=0; i<8; i++){
+          queue0[pos0].message[i] = CAN.read();
         }
-        //AEM Infinity Series 3 IDs
-        switch(ID){
-            //Engine Speed 0-1, Throttle 4-5, Intake Air Temp 6, Coolant Temp 7
-            case 0x1F0A000:
-                //template: variable = message * modifier + offset
-                engine_speed = (message[0]*16*16 + message[1]) * m_engine_speed;
-                throttle = (message[4]*16*16 + message[5]) * m_throttle;
-                intake_air_temp = (_2c8bit(message[6]*1) * m_temp) + fahrenheit_offset;
-                coolant_temp = (_2c8bit(message[7]*1) * m_temp) + fahrenheit_offset;
-                break;
-            //AFR #1 0, AFR #2 1, Vehicle Speed 2-3, Gear Calculated 4, Ign Timing 5, Battery Volts 6-7
-            case 0x1F0A003:
-                afr_1 = message[0] * m_afr + afr_offset;
-                afr_2 = message[1] * m_afr + afr_offset;
-                vehicle_speed = (message[2]*16*16 + message[3]) * m_vehicle_speed;
-                gear = message[4] * m_gear;
-                ign_timing = message[5] * m_ign_timing + ign_offset;
-                battery_voltage = (message[6]*16*16 + message[7]) * m_battery_voltage;
-                break;
-            //MAP 0-1, VE 2, FuelPressure 3, OilPressure 4, AFRTarget 5, 6 and 7 are boolean variables that could be used as lamps
-            case 0x1F0A004:
-                manifold_absolute_pressure = (message[0]*16*16 + message[1]) * m_map + map_offset;
-                ve = message[2] * m_ve;
-                fuel_pressure = message[3] * m_pressure;
-                oil_pressure = message[4] * m_pressure;
-                afr_target = message[5] * m_afr + afr_offset;
-                break;
-            default:
-                Serial.print(" message was not used");
-                break;
+       pos0++;
+       if(pos0 > 4)pos0 = 0;
+       if(++size0 > 5)Serial.println("Holding queue overflow");
+       Serial.println("size " + String(size0));
+    }
+       break;
+    case 0x1F0A003 :
+      if(size3<5){
+        Serial.println("queue");
+          queue3[pos3].packetId = CAN.packetId();
+          for(int i=0; i<8; i++){
+            queue3[pos3].message[i] = CAN.read();
           }
-        Serial.println();
+         pos3++;
+         if(pos3 > 4)pos3 = 0;
+         if(++size3 > 5)Serial.println("Holding queue overflow");
+         Serial.println("size " + String(size3));
       }
-    
-      Serial.println();
+       break;
+     case 0x1F0A004 :
+     if(size4<5){
+      Serial.println("queue");
+        queue4[pos4].packetId = CAN.packetId();
+        for(int i=0; i<8; i++){
+          queue4[pos4].message[i] = CAN.read();
+        }
+       pos4++;
+       if(pos4 > 4)pos4 = 0;
+       if(++size4 > 5)Serial.println("Holding queue overflow");
+       Serial.println("size " + String(size4));
+     }
+       break;
+      default:
+          //Serial.println(" message was not used");
+          break;
     }
   }
 }
