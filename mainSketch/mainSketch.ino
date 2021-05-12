@@ -269,7 +269,7 @@ void screen(void * parameter){
 //  i = i+1;
 
   //================LED LOOP=======================//
-    if (engine_speed == 0 ) {
+    if (engine_speed <= 0 ) {
       set_LEDs(0);
     } else if( engine_speed <= rev_segment ){
       set_LEDs(1);
@@ -421,4 +421,5 @@ void CAN_Handler(int packet_size){
           //Serial.println(" message was not used");
           break;
     }
+  }
 }
