@@ -299,29 +299,30 @@ void screen(void * parameter){
       set_LEDs(9);
     }
 
-    // draw a number to the speed
     spr_width = spr.textWidth("277");
+
+    // draw a number to the speed
     spr.createSprite(spr_width, spr.fontHeight());
     spr.setTextPadding(spr_width);
     spr.drawNumber(vehicle_speed, spr_width/2, spr.fontHeight()/2);
     spr.pushSprite(SPEED_CENTER_X, SPEED_CENTER_Y);
 
     // draw a number to the revs
-    spr_width = spr.textWidth("277");
+    // spr_width = spr.textWidth("277");
     spr.createSprite(spr_width, spr.fontHeight());
     spr.setTextPadding(spr_width);
     spr.drawNumber(engine_speed, spr_width/2, spr.fontHeight()/2);
     spr.pushSprite(REV_CENTER_X, REV_CENTER_Y);
 
     // draw a number to the gear
-    spr_width = spr.textWidth("277");
+    // spr_width = spr.textWidth("277");
     spr.createSprite(spr_width, spr.fontHeight());
     spr.setTextPadding(spr_width);
     spr.drawNumber(gear, spr_width/2, spr.fontHeight()/2, 6);
     spr.pushSprite(GEAR_CENTRE_X - spr_width / 2, GEAR_CENTRE_Y - spr.fontHeight() / 2);
 
     // draw a number to the temp
-    spr_width = spr.textWidth("277");
+    // spr_width = spr.textWidth("277");
     spr.createSprite(spr_width, spr.fontHeight());
     spr.setTextPadding(spr_width);
     spr.drawNumber(coolant_temp, spr_width/2, spr.fontHeight()/2, 6);
